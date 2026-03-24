@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Users,
   UserCircle,
+  UserPlus,
   Store,
   CreditCard,
   Crown,
@@ -34,6 +35,11 @@ const routes = [
     label: "Users",
     icon: Users,
     href: "/dashboard/users",
+  },
+  {
+    label: "Empleados",
+    icon: UserPlus,
+    href: "/dashboard/employees",
   },
   {
     label: "Establishments",

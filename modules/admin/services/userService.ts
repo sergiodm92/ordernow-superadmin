@@ -9,6 +9,13 @@ interface CreateUserData {
   roles: string[];
 }
 
+export interface CreateEmployeeData {
+  email: string;
+  firstName: string;
+  lastName: string;
+  roles: string[];
+}
+
 export interface UpdateUserData {
   id: string;
   email?: string;
@@ -22,7 +29,12 @@ export interface UpdateUserData {
 export const createUserService = async (createUserData: CreateUserData) => {
   // User creation data prepared
   const response = await api.post("/auth/register", createUserData);
-  return response.data; // Devuelve el token y los datos del usuario
+  return response.data;
+};
+
+export const createEmployeeService = async (data: CreateEmployeeData) => {
+  const response = await api.post("/auth/register", data);
+  return response.data;
 };
 
 export const updateUserService = async (updateUserData: UpdateUserData) => {
@@ -42,7 +54,7 @@ export const getAllUsersService = async (page: number, size: number) => {
 };
 
 export const deleteUserService = async (id: string) => {
-  const response = await api.delete(`/auth/users/${id}`);
+  const response = await api.delete(`/users/${id}`);
   return response.data; // Devuelve el token y los datos del usuario
 };
 

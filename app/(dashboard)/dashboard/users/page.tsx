@@ -86,6 +86,7 @@ export default function UsersPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Roles</TableHead>
+                  <TableHead>Establecimiento</TableHead>
                   <TableHead>Email Verify</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -134,6 +135,11 @@ export default function UsersPage() {
                       }`}>
                         {user.emailVerified ? 'Verify' : 'Not Verify'}
                       </span>
+                    </TableCell>
+                    <TableCell>
+                      {user.establishments && user.establishments.length > 0
+                        ? user.establishments.map((est) => est.name).join(", ")
+                        : "—"}
                     </TableCell>
                     <TableCell className="text-right space-x-2">
                       <EditUserDialog
