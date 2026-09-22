@@ -225,7 +225,10 @@ api.interceptors.response.use(
         `${api.defaults.baseURL}/auth/refresh-token?refreshToken=${encodeURIComponent(currentRefreshToken)}`
       );
 
-      const { token, refreshToken, expiresIn } = response.data.data;
+      const raw = response.data.data;
+      const token: string = raw.accessToken ?? raw.token;
+      const refreshToken: string = raw.refreshToken;
+      const expiresIn: number = raw.expiresIn ?? raw.tokenExpiresIn ?? 3600;
 
       // Actualizar tokens en storage
       tokenManager.updateTokens(token, refreshToken, expiresIn);
