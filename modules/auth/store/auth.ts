@@ -28,7 +28,12 @@ export const useAuthStore = create<AuthState>()(
       roles: [],
 
       login: (token, refreshToken, tokenExpiresIn, user) => {
-        const cookieData = { token, refreshToken, tokenExpiresIn, user };
+        // Cookie mínima para el middleware (evita superar 4KB por cookie del navegador).
+        // El objeto user completo (con permisos) queda en localStorage vía Zustand persist.
+        const cookieData = {
+          token,
+          user: { roles: (user.roles || []).map((r) => ({ name: r.name })) },
+        };
         Cookies.set("auth-storage", JSON.stringify(cookieData));
 
         set({
@@ -41,12 +46,8 @@ export const useAuthStore = create<AuthState>()(
       },
 
       updateTokens: (token, refreshToken, tokenExpiresIn) => {
-        Cookies.set("auth-storage", JSON.stringify({
-          ...JSON.parse(Cookies.get("auth-storage") || "{}"),
-          token,
-          refreshToken,
-          tokenExpiresIn,
-        }));
+        const existing = JSON.parse(Cookies.get("auth-storage") || "{}");
+        Cookies.set("auth-storage", JSON.stringify({ ...existing, token }));
         set({ token, refreshToken, tokenExpiresIn });
       },
 
