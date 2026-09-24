@@ -7,7 +7,11 @@ export const getRolesService = async (): Promise<Role[]> => {
 };
 
 export const createRoleService = async (data: CreateRoleDto): Promise<Role> => {
-  const response = await api.post("/roles", data);
+  const { permissions, ...rest } = data;
+  const response = await api.post("/roles", {
+    ...rest,
+    permissionIds: permissions,
+  });
   return response.data.data;
 };
 
@@ -17,7 +21,7 @@ export const updateRoleService = async (data: UpdateRoleDto): Promise<Role> => {
     description: data.description,
     permissionIds: data.permissions,
   });
-  return response.data;
+  return response.data.data;
 };
 
 export const deleteRoleService = async (id: string): Promise<void> => {

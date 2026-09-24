@@ -1,10 +1,11 @@
 "use client";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { Role } from "../types/role";
 
 interface RolesState {
-  roles: string[];
-  setRoles: (roles: string[]) => void;
+  roles: Role[];
+  setRoles: (roles: Role[]) => void;
 }
 
 export const useRolesStore = create<RolesState>()(

@@ -1,12 +1,12 @@
 import { useEffect } from "react";
-import { getAllRolesService } from "../services/rolesService";
+import { getRolesService } from "../services/roleService";
 import { useRolesStore } from "../store/roles";
 
 export const useFetchRoles = () => {
   const { setRoles } = useRolesStore();
 
   useEffect(() => {
-    getAllRolesService()
+    getRolesService()
       .then((response) => {
         setRoles(response);
       })
