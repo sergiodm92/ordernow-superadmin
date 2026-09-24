@@ -7,7 +7,10 @@ export const useFetchUsers = (page: number, size: number) => {
 
   const fetchUsers = useCallback(async () => {
     try {
-      const response = await getAllUsersService(page, size);
+      // page is 0-based here (matches every caller's UI state); the backend's
+      // GET /users/all is 1-based, so page=0 becomes a negative OFFSET and
+      // the query fails. Convert at this boundary.
+      const response = await getAllUsersService(page + 1, size);
       setUsers(response.content);
       setTotalElements(response.totalElements);
     } catch (error) {

@@ -25,6 +25,7 @@ import { Combobox, ComboboxOption } from "@/components/ui/combobox";
 import { IEstablishment } from "@/modules/admin/types/establishment";
 import { useFetchUsers } from "@/modules/admin/hooks/useFetchUsers";
 import { useUsersStore } from "@/modules/admin/store/user";
+import { useToast } from "@/hooks/useToast";
 
 const establishmentSchema = z.object({
   name: z.string().min(1, "El nombre es requerido"),
@@ -56,6 +57,7 @@ export function EstablishmentDialog({
 }: EstablishmentDialogProps) {
   const { users } = useUsersStore();
   const { fetchUsers } = useFetchUsers(0, 100); // Fetch first 100 users
+  const { toast } = useToast();
 
   const form = useForm<EstablishmentFormValues>({
     resolver: zodResolver(establishmentSchema),
@@ -74,31 +76,25 @@ export function EstablishmentDialog({
   // Fetch users when dialog opens
   useEffect(() => {
     if (open) {
-      fetchUsers().catch(error => {
-        console.error('Error fetching users:', error);
-        // En caso de error, no hacer nada - el componente manejará la lista vacía
+      fetchUsers().catch(() => {
+        toast({
+          title: "Error",
+          description: "No se pudo cargar la lista de propietarios. Reintentá abriendo el diálogo de nuevo.",
+          variant: "destructive",
+        });
       });
     }
-  }, [open, fetchUsers]);
+  }, [open, fetchUsers, toast]);
 
   // Transform users into combobox options
-  const userOptions: ComboboxOption[] = useMemo(() => {
-    // Si no hay usuarios disponibles (por error de red), mostrar datos mock para demostración
-    if (users.length === 0) {
-      return [
-        { value: "1", label: "Juan Pérez (juan.perez@email.com)" },
-        { value: "2", label: "María García (maria.garcia@email.com)" },
-        { value: "3", label: "Carlos López (carlos.lopez@email.com)" },
-        { value: "4", label: "Ana Martínez (ana.martinez@email.com)" },
-        { value: "5", label: "Luis Rodríguez (luis.rodriguez@email.com)" }
-      ];
-    }
-    
-    return users.map(user => ({
-      value: user.id,
-      label: `${user.firstName} ${user.lastName} (${user.email})`
-    }));
-  }, [users]);
+  const userOptions: ComboboxOption[] = useMemo(
+    () =>
+      users.map(user => ({
+        value: user.id,
+        label: `${user.firstName} ${user.lastName} (${user.email})`,
+      })),
+    [users],
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
