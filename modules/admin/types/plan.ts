@@ -7,6 +7,8 @@ export interface Plan {
   maxTables: number;
   maxEmployees: number;
   maxCategories: number;
+  maxOptionGroups: number;
+  maxPromotions: number;
   deliveryEnabled: boolean;
   monthlyPriceUsd: number;
   yearlyPriceUsd: number;
@@ -21,6 +23,8 @@ export interface CreatePlanDto {
   maxTables: number;
   maxEmployees: number;
   maxCategories: number;
+  maxOptionGroups: number;
+  maxPromotions: number;
   deliveryEnabled: boolean;
   monthlyPriceUsd: number;
   yearlyPriceUsd: number;

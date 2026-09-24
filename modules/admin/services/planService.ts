@@ -22,5 +22,5 @@ export const deletePlanService = async (id: number): Promise<void> => {
 };
 
 export const deactivatePlanService = async (id: number): Promise<void> => {
-  await api.patch(`/plans/${id}/deactivates`);
+  await api.patch(`/plans/${id}/deactivate`);
 };

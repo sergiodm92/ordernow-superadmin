@@ -3,25 +3,17 @@ import api from "@/config/api.axios";
 interface CreatePaymentMethodData {
   name: string;
   description: string;
+  fee: number;
+  isActive: boolean;
 }
 
-
-export const createPaymentMethodService = async ({ name, description }: CreatePaymentMethodData) => {
-  const response = await api.post("/admin/payment-methods", { name, description });
-  return response.data; // Devuelve el token y los datos del usuario
-};
-
-export const updatePaymentMethodService = async ({ name, description }: CreatePaymentMethodData) => {
-  const response = await api.put("/admin/payment-methods", { name, description });
-  return response.data; // Devuelve el token y los datos del usuario
+// The backend only exposes POST and GET for /payment-methods (no update/delete yet).
+export const createPaymentMethodService = async (data: CreatePaymentMethodData) => {
+  const response = await api.post("/payment-methods", data);
+  return response.data.data;
 };
 
 export const getPaymentMethodsService = async () => {
-  const response = await api.get("/admin/payment-methods");
-  return response.data; // Devuelve los datos del usuario autenticado
-};
-
-export const deletePaymentMethodService = async (id: string) => {
-  const response = await api.delete(`/admin/payment-methods/${id}`);
-  return response.data; // Devuelve el token y los datos del usuario
+  const response = await api.get("/payment-methods");
+  return response.data.data;
 };

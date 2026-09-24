@@ -45,10 +45,14 @@ const planSchema = z.object({
   maxTables: z.number(),
   maxEmployees: z.number(),
   maxCategories: z.number(),
+  maxOptionGroups: z.number(),
+  maxPromotions: z.number(),
   unlimitedMenuItems: z.boolean().default(false),
   unlimitedTables: z.boolean().default(false),
   unlimitedEmployees: z.boolean().default(false),
   unlimitedCategories: z.boolean().default(false),
+  unlimitedOptionGroups: z.boolean().default(false),
+  unlimitedPromotions: z.boolean().default(false),
   deliveryEnabled: z.boolean().default(false),
   monthlyPriceUsd: z.number().min(0, "El precio debe ser mayor o igual a 0"),
   yearlyPriceUsd: z.number().min(0, "El precio debe ser mayor o igual a 0"),
@@ -85,10 +89,14 @@ export function PlanDialog({ plan, onSubmit, trigger, title, onClose }: PlanDial
       maxTables: plan ? (plan.maxTables === -1 ? 0 : plan.maxTables) : 0,
       maxEmployees: plan ? (plan.maxEmployees === -1 ? 0 : plan.maxEmployees) : 0,
       maxCategories: plan ? (plan.maxCategories === -1 ? 0 : plan.maxCategories) : 0,
+      maxOptionGroups: plan ? (plan.maxOptionGroups === -1 ? 0 : plan.maxOptionGroups ?? 0) : 0,
+      maxPromotions: plan ? (plan.maxPromotions === -1 ? 0 : plan.maxPromotions ?? 0) : 0,
       unlimitedMenuItems: plan?.maxMenuItems === -1,
       unlimitedTables: plan?.maxTables === -1,
       unlimitedEmployees: plan?.maxEmployees === -1,
       unlimitedCategories: plan?.maxCategories === -1,
+      unlimitedOptionGroups: plan?.maxOptionGroups === -1,
+      unlimitedPromotions: plan?.maxPromotions === -1,
       deliveryEnabled: plan?.deliveryEnabled || false,
       monthlyPriceUsd: plan?.monthlyPriceUsd || 0,
       yearlyPriceUsd: plan?.yearlyPriceUsd || 0,
@@ -98,13 +106,23 @@ export function PlanDialog({ plan, onSubmit, trigger, title, onClose }: PlanDial
 
   const handleSubmit = async (data: PlanFormData) => {
     try {
-      const { unlimitedMenuItems, unlimitedTables, unlimitedEmployees, unlimitedCategories, ...rest } = data;
+      const {
+        unlimitedMenuItems,
+        unlimitedTables,
+        unlimitedEmployees,
+        unlimitedCategories,
+        unlimitedOptionGroups,
+        unlimitedPromotions,
+        ...rest
+      } = data;
       const payload = {
         ...rest,
         maxMenuItems: unlimitedMenuItems ? -1 : rest.maxMenuItems,
         maxTables: unlimitedTables ? -1 : rest.maxTables,
         maxEmployees: unlimitedEmployees ? -1 : rest.maxEmployees,
         maxCategories: unlimitedCategories ? -1 : rest.maxCategories,
+        maxOptionGroups: unlimitedOptionGroups ? -1 : rest.maxOptionGroups,
+        maxPromotions: unlimitedPromotions ? -1 : rest.maxPromotions,
       };
       await onSubmit(payload);
       setOpen(false);
@@ -134,6 +152,8 @@ export function PlanDialog({ plan, onSubmit, trigger, title, onClose }: PlanDial
   const watchUnlimitedTables = form.watch("unlimitedTables");
   const watchUnlimitedEmployees = form.watch("unlimitedEmployees");
   const watchUnlimitedCategories = form.watch("unlimitedCategories");
+  const watchUnlimitedOptionGroups = form.watch("unlimitedOptionGroups");
+  const watchUnlimitedPromotions = form.watch("unlimitedPromotions");
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -361,6 +381,70 @@ export function PlanDialog({ plan, onSubmit, trigger, title, onClose }: PlanDial
                     <FormField
                       control={form.control}
                       name="maxCategories"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min={0}
+                              {...field}
+                              onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </div>
+
+                {/* Max Option Groups */}
+                <div className="space-y-2 border rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Grupos de opciones</span>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={watchUnlimitedOptionGroups}
+                        onCheckedChange={(checked) => form.setValue("unlimitedOptionGroups", !!checked)}
+                      />
+                      <span className="text-xs text-muted-foreground">Ilimitado</span>
+                    </div>
+                  </div>
+                  {!watchUnlimitedOptionGroups && (
+                    <FormField
+                      control={form.control}
+                      name="maxOptionGroups"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min={0}
+                              {...field}
+                              onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </div>
+
+                {/* Max Promotions */}
+                <div className="space-y-2 border rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">Promociones</span>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={watchUnlimitedPromotions}
+                        onCheckedChange={(checked) => form.setValue("unlimitedPromotions", !!checked)}
+                      />
+                      <span className="text-xs text-muted-foreground">Ilimitado</span>
+                    </div>
+                  </div>
+                  {!watchUnlimitedPromotions && (
+                    <FormField
+                      control={form.control}
+                      name="maxPromotions"
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>

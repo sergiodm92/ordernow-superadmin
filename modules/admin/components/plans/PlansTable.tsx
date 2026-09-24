@@ -198,6 +198,14 @@ export function PlansTable({ plans = [], onEdit, onDelete }: PlansTableProps) {
                       <span className="text-sm">Categorías</span>
                       <Badge variant="outline">{formatLimit(selectedPlan.maxCategories)}</Badge>
                     </div>
+                    <div className="flex justify-between border rounded-lg p-2">
+                      <span className="text-sm">Grupos de opciones</span>
+                      <Badge variant="outline">{formatLimit(selectedPlan.maxOptionGroups)}</Badge>
+                    </div>
+                    <div className="flex justify-between border rounded-lg p-2">
+                      <span className="text-sm">Promociones</span>
+                      <Badge variant="outline">{formatLimit(selectedPlan.maxPromotions)}</Badge>
+                    </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
