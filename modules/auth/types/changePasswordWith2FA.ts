@@ -9,13 +9,3 @@ export interface VerifyChangePasswordCodeFormValues {
 }
 
 export type ChangePasswordStep = 'password' | 'verify' | 'success';
-
-export interface ChangePasswordRequest {
-  currentPassword: string;
-  newPassword: string;
-}
-
-export interface VerifyChangePasswordRequest {
-  code: string;
-  newPassword: string;
-}

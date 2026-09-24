@@ -18,8 +18,8 @@ import {
   ChangePasswordStep
 } from "../types/changePasswordWith2FA";
 import {
-  requestChangePasswordWith2FAService,
-  verifyChangePasswordCodeService
+  requestPasswordChangeCodeService,
+  changePasswordService
 } from "../services/authService";
 import { toast } from "sonner";
 import { Lock, Mail, Shield, CheckCircle, ArrowLeft } from "lucide-react";
@@ -42,10 +42,7 @@ export const ChangePasswordWith2FAForm = () => {
   const handlePasswordSubmit = async (data: ChangePasswordWith2FAFormValues) => {
     setIsLoading(true);
     try {
-      await requestChangePasswordWith2FAService({
-        currentPassword: data.currentPassword,
-        newPassword: data.newPassword,
-      });
+      await requestPasswordChangeCodeService();
 
       setPasswordData(data);
       setCurrentStep("verify");
@@ -64,9 +61,11 @@ export const ChangePasswordWith2FAForm = () => {
 
     setIsLoading(true);
     try {
-      await verifyChangePasswordCodeService({
-        code: data.code,
+      await changePasswordService({
+        currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
+        confirmPassword: passwordData.confirmPassword,
+        twoFactorCode: data.code,
       });
 
       setCurrentStep("success");

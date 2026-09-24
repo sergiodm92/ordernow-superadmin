@@ -50,16 +50,8 @@ const getTokenExpiresIn = (jwt: string): number => {
 interface ChangePasswordData {
   currentPassword: string;
   newPassword: string;
-}
-
-interface RequestChangePasswordWith2FAData {
-  currentPassword: string;
-  newPassword: string;
-}
-
-interface VerifyChangePasswordCodeData {
-  code: string;
-  newPassword: string;
+  confirmPassword: string;
+  twoFactorCode: string;
 }
 
 export const loginAdminService = async ({email, password}: LoginData): Promise<AuthResponse> => {
@@ -82,12 +74,16 @@ export const loginAdminService = async ({email, password}: LoginData): Promise<A
       imageURL: backendUser.imageUrl ?? backendUser.imageURL ?? undefined,
     },
     roles: backendUser.roles ?? raw.roles ?? [],
-    establishments: raw.establishments ?? [],
+    // Establishment.id is a Postgres bigint, serialized as a string.
+    establishments: (raw.establishments ?? []).map((e: IEstablishment) => ({
+      ...e,
+      id: Number(e.id),
+    })),
   };
 };
 
 export const refreshTokenService = async (refreshToken: string): Promise<TokenRefreshResponse> => {
-  const response = await api.post(`/auth/refresh-token?refreshToken=${encodeURIComponent(refreshToken)}`);
+  const response = await api.post("/auth/refresh-token", { refreshToken });
   const raw = response.data.data;
   const token: string = raw.accessToken ?? raw.token;
 
@@ -100,8 +96,8 @@ export const refreshTokenService = async (refreshToken: string): Promise<TokenRe
 };
 
 export const getUserProfileService = async () => {
-  const response = await api.get("/auth/profile");
-  return response.data;
+  const response = await api.get("/users/me");
+  return response.data.data;
 };
 
 export const logoutService = async () => {
@@ -109,17 +105,16 @@ export const logoutService = async () => {
   return response.data;
 };
 
+// POST /auth/change-password validates currentPassword + a PASSWORD_CHANGE 2FA code
+// in a single call — request the code first via requestPasswordChangeCodeService.
 export const changePasswordService = async (data: ChangePasswordData) => {
-  const response = await api.put("/auth/change-password", data);
+  const response = await api.post("/auth/change-password", data);
   return response.data;
 };
 
-export const requestChangePasswordWith2FAService = async (data: RequestChangePasswordWith2FAData) => {
-  const response = await api.post("/auth/change-password/request-2fa", data);
-  return response.data;
-};
-
-export const verifyChangePasswordCodeService = async (data: VerifyChangePasswordCodeData) => {
-  const response = await api.post("/auth/change-password/verify-2fa", data);
+export const requestPasswordChangeCodeService = async () => {
+  const response = await api.post("/auth/2fa/generate", {
+    verificationType: "PASSWORD_CHANGE",
+  });
   return response.data;
 };

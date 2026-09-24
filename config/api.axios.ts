@@ -221,9 +221,9 @@ api.interceptors.response.use(
     originalRequest._retry = true;
 
     try {
-      const response = await axios.post(
-        `${api.defaults.baseURL}/auth/refresh-token?refreshToken=${encodeURIComponent(currentRefreshToken)}`
-      );
+      const response = await axios.post(`${api.defaults.baseURL}/auth/refresh-token`, {
+        refreshToken: currentRefreshToken,
+      });
 
       const raw = response.data.data;
       const token: string = raw.accessToken ?? raw.token;
