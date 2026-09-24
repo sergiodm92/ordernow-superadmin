@@ -11,6 +11,7 @@ interface CreateUserData {
 
 export interface CreateEmployeeData {
   email: string;
+  password: string;
   firstName: string;
   lastName: string;
   roles: string[];
@@ -27,35 +28,29 @@ export interface UpdateUserData {
 
 
 export const createUserService = async (createUserData: CreateUserData) => {
-  // User creation data prepared
   const response = await api.post("/auth/register", createUserData);
-  return response.data;
+  return response.data.data;
 };
 
 export const createEmployeeService = async (data: CreateEmployeeData) => {
   const response = await api.post("/auth/register", data);
-  return response.data;
+  return response.data.data;
 };
 
 export const updateUserService = async (updateUserData: UpdateUserData) => {
   const {id, ...data} = updateUserData;
   const response = await api.put(`/users/${id}`, data);
-  return response.data; // Devuelve el token y los datos del usuario
-};
-
-export const getUsersService = async () => {
-  const response = await api.get("/auth/users");
-  return response.data; // Devuelve los datos del usuario autenticado
+  return response.data.data;
 };
 
 export const getAllUsersService = async (page: number, size: number) => {
   const response = await api.get(`/users/all?page=${page}&size=${size}`);
-  return response.data.data; // Devuelve los datos del usuario autenticado
+  return response.data.data;
 };
 
 export const deleteUserService = async (id: string) => {
   const response = await api.delete(`/users/${id}`);
-  return response.data; // Devuelve el token y los datos del usuario
+  return response.data.data;
 };
 
 

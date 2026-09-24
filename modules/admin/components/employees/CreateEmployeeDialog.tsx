@@ -44,8 +44,17 @@ const employeeSchema = yup.object().shape({
     .string()
     .email("Email inválido")
     .required("El email es requerido"),
-  firstName: yup.string().required("El nombre es requerido"),
-  lastName: yup.string().required("El apellido es requerido"),
+  password: yup
+    .string()
+    .min(6, "La contraseña debe tener al menos 6 caracteres")
+    .max(128, "La contraseña no puede superar los 128 caracteres")
+    .matches(/[a-z]/, "Debe contener al menos una minúscula")
+    .matches(/[A-Z]/, "Debe contener al menos una mayúscula")
+    .matches(/[0-9]/, "Debe contener al menos un número")
+    .matches(/[.!@#$%^&*()_+\-=[\]{};':,<>?/~`|\\]/, "Debe contener al menos un carácter especial")
+    .required("La contraseña es requerida"),
+  firstName: yup.string().min(2, "Mínimo 2 caracteres").required("El nombre es requerido"),
+  lastName: yup.string().min(2, "Mínimo 2 caracteres").required("El apellido es requerido"),
   role: yup.string().required("Debe seleccionar un rol"),
 });
 
@@ -65,6 +74,7 @@ export default function CreateEmployeeDialog({
     resolver: yupResolver(employeeSchema),
     defaultValues: {
       email: "",
+      password: "",
       firstName: "",
       lastName: "",
       role: "",
@@ -76,13 +86,14 @@ export default function CreateEmployeeDialog({
     try {
       await createEmployeeService({
         email: data.email,
+        password: data.password,
         firstName: data.firstName,
         lastName: data.lastName,
         roles: [data.role],
       });
       toast.success("Empleado creado exitosamente", {
         description:
-          "Se envió la contraseña temporal por email al empleado.",
+          "Compartí la contraseña inicial con el empleado para que pueda iniciar sesión.",
       });
       onEmployeeCreated();
       setIsOpen(false);
@@ -90,7 +101,7 @@ export default function CreateEmployeeDialog({
     } catch (error: any) {
       const status = error?.response?.status;
       if (status === 400) {
-        toast.error("El email ya está registrado");
+        toast.error(error?.response?.data?.message || "Datos inválidos");
       } else if (status === 403) {
         toast.error("No tienes permisos para crear empleados");
       } else {
@@ -122,15 +133,15 @@ export default function CreateEmployeeDialog({
         <DialogHeader>
           <DialogTitle>Crear Nuevo Empleado</DialogTitle>
           <DialogDescription>
-            Complete los datos del empleado. No se requiere contraseña.
+            Complete los datos del empleado y defina una contraseña inicial.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950">
           <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
           <p className="text-sm text-blue-700 dark:text-blue-300">
-            El empleado recibirá un email con su contraseña temporal para
-            iniciar sesión.
+            Compartí la contraseña inicial con el empleado. Podrá cambiarla
+            luego desde su cuenta.
           </p>
         </div>
 
@@ -148,6 +159,19 @@ export default function CreateEmployeeDialog({
                       placeholder="empleado@restaurante.com"
                       {...field}
                     />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contraseña inicial</FormLabel>
+                  <FormControl>
+                    <Input type="password" autoComplete="new-password" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
