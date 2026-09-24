@@ -25,7 +25,9 @@ export function NotificationList({ maxHeight = "400px" }: NotificationListProps)
     try {
       const data = await getNotifications(pageNum, 10);
       setNotifications((prev) => (append ? [...prev, ...data.content] : data.content));
-      setHasMore(!data.last);
+      // Backend's PaginatedNotifications has no `last` flag — derive it from number/totalPages
+      // (0-based page index), same convention as the rest of the app's paginated responses.
+      setHasMore(data.number + 1 < data.totalPages);
     } catch {
       // Silently fail
     } finally {

@@ -6,7 +6,7 @@ import {
   getPermissionsService,
   updatePermissionService,
 } from '../services/permissionService';
-import { CreatePermissionDTO, PermissionDTO } from '../types/permission';
+import { CreatePermissionDTO, UpdatePermissionDTO } from '../types/permission';
 
 export const usePermissions = () => {
   const queryClient = useQueryClient();
@@ -36,7 +36,7 @@ export const usePermissions = () => {
   });
 
   const updatePermission = useMutation({
-    mutationFn: (data: PermissionDTO) => updatePermissionService(data),
+    mutationFn: (data: UpdatePermissionDTO) => updatePermissionService(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['permissions'] });
       toast({

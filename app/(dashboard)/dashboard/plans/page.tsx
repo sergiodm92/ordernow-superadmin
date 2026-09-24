@@ -30,9 +30,14 @@ export default function PlansPage() {
 
   const handleUpdatePlan = async (data: any) => {
     if (editingPlan) {
+      // UpdatePlanDto doesn't accept planType (immutable after creation) — the backend's
+      // whitelist validation 400s if it's present, so strip it here. `active` is stripped too:
+      // PlanDto never returns it, so the form can't know the real state and sending the default
+      // would silently reactivate a deactivated plan.
+      const { planType, active, ...updateFields } = data;
       await updatePlan.mutateAsync({
         id: editingPlan.id,
-        ...data,
+        ...updateFields,
       });
       setEditingPlan(null);
     }

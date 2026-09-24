@@ -82,7 +82,6 @@ export function PlansTable({ plans = [], onEdit, onDelete }: PlansTableProps) {
               <TableHead>Precio Anual</TableHead>
               <TableHead>Límites</TableHead>
               <TableHead>Delivery</TableHead>
-              <TableHead>Estado</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
             </TableRow>
           </TableHeader>
@@ -109,13 +108,6 @@ export function PlansTable({ plans = [], onEdit, onDelete }: PlansTableProps) {
                     </Badge>
                   ) : (
                     <Badge variant="secondary">No</Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {plan.active ? (
-                    <Badge variant="default" className="bg-green-600">Activo</Badge>
-                  ) : (
-                    <Badge variant="destructive">Inactivo</Badge>
                   )}
                 </TableCell>
                 <TableCell className="text-right space-x-2">
@@ -215,14 +207,6 @@ export function PlansTable({ plans = [], onEdit, onDelete }: PlansTableProps) {
                       <Badge variant="default" className="bg-green-600">Habilitado</Badge>
                     ) : (
                       <Badge variant="secondary">Deshabilitado</Badge>
-                    )}
-                  </div>
-                  <div>
-                    <h4 className="font-medium mb-1">Estado</h4>
-                    {selectedPlan.active ? (
-                      <Badge variant="default" className="bg-green-600">Activo</Badge>
-                    ) : (
-                      <Badge variant="destructive">Inactivo</Badge>
                     )}
                   </div>
                 </div>

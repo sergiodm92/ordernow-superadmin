@@ -100,7 +100,9 @@ export function PlanDialog({ plan, onSubmit, trigger, title, onClose }: PlanDial
       deliveryEnabled: plan?.deliveryEnabled || false,
       monthlyPriceUsd: plan?.monthlyPriceUsd || 0,
       yearlyPriceUsd: plan?.yearlyPriceUsd || 0,
-      active: plan?.active ?? true,
+      // The backend's PlanDto never returns `active` (see modules/admin/types/plan.ts), so there's
+      // no real value to prefill from — this always defaulted to true in practice anyway.
+      active: true,
     },
   });
 
@@ -484,26 +486,29 @@ export function PlanDialog({ plan, onSubmit, trigger, title, onClose }: PlanDial
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="active"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel>Activo</FormLabel>
-                    <div className="text-sm text-muted-foreground">
-                      El plan estará disponible para asignar
+            {/* Only on create: PlanDto doesn't expose `active`, so edit can't show the real state. */}
+            {!plan && (
+              <FormField
+                control={form.control}
+                name="active"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel>Activo</FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        El plan estará disponible para asignar
+                      </div>
                     </div>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            )}
 
             <Button type="submit" className="w-full">
               {plan ? "Actualizar" : "Crear"} Plan
