@@ -45,7 +45,10 @@ export default function EstablishmentsPage() {
       if (mode === "create") {
         await createEstablishment(data);
       } else if (selectedEstablishment) {
-        await updateEstablishment(selectedEstablishment.id, data);
+        // UpdateEstablishmentDto doesn't accept userOwnerId — the backend's
+        // whitelist validation 400s if it's present, so strip it here.
+        const { userOwnerId, ...updateData } = data;
+        await updateEstablishment(selectedEstablishment.id, updateData);
       }
       setIsOpen(false);
     } catch (error) {
