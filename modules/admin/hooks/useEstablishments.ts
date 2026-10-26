@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { isAxiosError } from "axios";
 import { toast } from "sonner";
 import { useEstablishmentsStore } from "../store/establishments";
 import {
@@ -54,9 +55,15 @@ export const useEstablishments = () => {
       removeEstablishment(id);
       toast.success("Establecimiento eliminado exitosamente");
     } catch (error) {
-      toast.error("Error al eliminar el establecimiento");
+      // Not rethrown: the only caller is toastConfirm's fire-and-forget callback, so a rethrow
+      // would surface as an unhandled rejection. The toast is the error handling.
+      const code = isAxiosError(error) ? error.response?.data?.code : undefined;
+      toast.error(
+        code === "ESTABLISHMENT_HAS_HISTORY"
+          ? "No se puede eliminar: el establecimiento tiene pedidos, pagos u otro historial."
+          : "Error al eliminar el establecimiento"
+      );
       console.error(error);
-      throw error;
     }
   }, [removeEstablishment]);
 
