@@ -1,20 +1,11 @@
-export interface Permission {
-  id: string;
-  name: string;
-  description: string;
-}
+import { Schemas } from "@/types/api";
 
-export interface Role {
-  id: string;
-  name: string;
-  description: string;
-  isDefault: boolean;
-  permissions: Permission[];
-  level: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
+// Mirrors the backend's Role / Permission entities (GET/POST/PUT /roles).
+export type Permission = Schemas["Permission"];
+export type Role = Schemas["Role"];
 
+// Frontend-only write shapes: the UI works with a `permissions: string[]` (ids) field and
+// roleService.ts remaps it to the backend's `permissionIds` before sending.
 export interface CreateRoleDto {
   name: string;
   description: string;

@@ -1,31 +1,7 @@
-export interface Notification {
-  id: string;
-  title: string;
-  body: string;
-  type: "PLATFORM" | "ESTABLISHMENT";
-  senderName: string;
-  establishmentName: string | null;
-  isRead: boolean;
-  readAt: string | null;
-  createdAt: string;
-}
+import { ApiData, Schemas } from "@/types/api";
 
-export interface NotificationPage {
-  content: Notification[];
-  totalElements: number;
-  totalPages: number;
-  number: number;
-  size: number;
-  last: boolean;
-}
-
-export interface CreateNotificationPayload {
-  title: string;
-  body: string;
-  type: "PLATFORM" | "ESTABLISHMENT";
-  establishmentId?: number;
-}
-
-export interface UnreadCount {
-  count: number;
-}
+// PaginatedNotifications has no `last` field — derive "has more pages" from `number`/`totalPages`
+// (see NotificationList.tsx).
+export type Notification = Schemas["NotificationResponseDto"];
+export type NotificationPage = ApiData<"/api/v1/notifications", "get">;
+export type CreateNotificationPayload = Schemas["CreateNotificationDto"];

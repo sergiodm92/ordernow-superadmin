@@ -1,50 +1,10 @@
+import { Schemas } from "@/types/api";
 
-export interface IEstablishment {
-  id: number;
-  name: string;
-  country: string;
-  state: string;
-  city: string;
-  address: string;
-  phone: string;
-  email: string;
-  userOwnerId: string;
-  checkoutMode?: string;
-  description?: string;
-  website?: string;
-  cuisineType?: string;
-  capacity?: number;
-  openingHours?: string;
-  deliveryRadius?: number;
-  acceptsReservations?: boolean;
-  hasWifi?: boolean;
-  hasParking?: boolean;
-  acceptsCards?: boolean;
-}
-
-export interface CreateEstablishmentDto {
-  name: string;
-  country: string;
-  state: string;
-  city: string;
-  address: string;
-  phone: string;
-  email: string;
-  userOwnerId: string;
-  checkoutMode?: string;
-  description?: string;
-  website?: string;
-  cuisineType?: string;
-  capacity?: number;
-  openingHours?: string;
-  deliveryRadius?: number;
-  acceptsReservations?: boolean;
-  hasWifi?: boolean;
-  hasParking?: boolean;
-  acceptsCards?: boolean;
-}
-
-export interface UpdateEstablishmentDto extends Partial<CreateEstablishmentDto> {}
+// Mirrors the backend's EstablishmentResponseDto / CreateEstablishmentDto / UpdateEstablishmentDto
+// (GET/POST/PUT /establishments).
+export type IEstablishment = Schemas["EstablishmentResponseDto"];
+export type CreateEstablishmentDto = Schemas["CreateEstablishmentDto"];
+export type UpdateEstablishmentDto = Schemas["UpdateEstablishmentDto"];
 
 export interface IEstablishmentSettings {
   id: number;
