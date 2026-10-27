@@ -7,6 +7,7 @@ import {
   deactivatePlanService,
 } from "../services/planService";
 import { CreatePlanDto, UpdatePlanDto } from "../types/plan";
+import { sortPlans } from "../utils/sortPlans";
 
 export const usePlans = () => {
   const queryClient = useQueryClient();
@@ -14,6 +15,7 @@ export const usePlans = () => {
   const { data: plans = [], isLoading } = useQuery({
     queryKey: ["plans"],
     queryFn: getPlansService,
+    select: sortPlans,
   });
 
   const createPlan = useMutation({

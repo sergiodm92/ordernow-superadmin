@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/useToast";
 import toastConfirm from "@/components/common/ToastConfirm";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { formatArsPrice, formatUsdPrice } from "../../utils/formatPrice";
 
 interface PlansTableProps {
   plans: Plan[];
@@ -20,7 +21,28 @@ interface PlansTableProps {
 
 const formatLimit = (value: number) => (value === -1 ? "Ilimitado" : String(value));
 
-const formatPrice = (value: number) => `$${value.toFixed(2)}`;
+/** Precio que cobra Mercado Pago (ARS) y, debajo, el USD de referencia. */
+function PlanPrice({ ars, usd }: { ars: number | null | undefined; usd: number }) {
+  const hasArsPrice = ars !== null && ars !== undefined;
+  return (
+    <div className="whitespace-nowrap">
+      <div
+        className={hasArsPrice ? "font-medium" : "text-muted-foreground"}
+        title={hasArsPrice ? undefined : "Este plan no se puede comprar con Mercado Pago en este ciclo"}
+      >
+        {formatArsPrice(ars)}
+      </div>
+      <div className="text-xs text-muted-foreground">{formatUsdPrice(usd)} (ref.)</div>
+    </div>
+  );
+}
+
+/** Un plan sin dato de `active` no es "Inactivo": se muestra neutro. */
+function PlanStatusBadge({ active }: { active: boolean | undefined }) {
+  if (active === true) return <Badge variant="default" className="bg-green-600">Activo</Badge>;
+  if (active === false) return <Badge variant="destructive">Inactivo</Badge>;
+  return <Badge variant="outline">Sin dato</Badge>;
+}
 
 export function PlansTable({ plans = [], onEdit, onDelete }: PlansTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -78,8 +100,8 @@ export function PlansTable({ plans = [], onEdit, onDelete }: PlansTableProps) {
             <TableRow>
               <TableHead>Nombre</TableHead>
               <TableHead>Tipo</TableHead>
-              <TableHead>Precio Mensual</TableHead>
-              <TableHead>Precio Anual</TableHead>
+              <TableHead>Precio mensual (ARS)</TableHead>
+              <TableHead>Precio anual (ARS)</TableHead>
               <TableHead>Límites</TableHead>
               <TableHead>Delivery</TableHead>
               <TableHead>Estado</TableHead>
@@ -93,8 +115,12 @@ export function PlansTable({ plans = [], onEdit, onDelete }: PlansTableProps) {
                 <TableCell>
                   <Badge variant="secondary">{plan.planType}</Badge>
                 </TableCell>
-                <TableCell>{formatPrice(plan.monthlyPriceUsd)}</TableCell>
-                <TableCell>{formatPrice(plan.yearlyPriceUsd)}</TableCell>
+                <TableCell>
+                  <PlanPrice ars={plan.monthlyPriceArs} usd={plan.monthlyPriceUsd} />
+                </TableCell>
+                <TableCell>
+                  <PlanPrice ars={plan.yearlyPriceArs} usd={plan.yearlyPriceUsd} />
+                </TableCell>
                 <TableCell>
                   <div className="text-xs space-y-0.5">
                     <div>Items: {formatLimit(plan.maxMenuItems)}</div>
@@ -112,11 +138,7 @@ export function PlansTable({ plans = [], onEdit, onDelete }: PlansTableProps) {
                   )}
                 </TableCell>
                 <TableCell>
-                  {plan.active ? (
-                    <Badge variant="default" className="bg-green-600">Activo</Badge>
-                  ) : (
-                    <Badge variant="destructive">Inactivo</Badge>
-                  )}
+                  <PlanStatusBadge active={plan.active} />
                 </TableCell>
                 <TableCell className="text-right space-x-2">
                   <Button
@@ -171,12 +193,12 @@ export function PlansTable({ plans = [], onEdit, onDelete }: PlansTableProps) {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <h4 className="font-medium mb-1">Precio Mensual</h4>
-                    <p className="text-sm text-muted-foreground">{formatPrice(selectedPlan.monthlyPriceUsd)}</p>
+                    <h4 className="font-medium mb-1">Precio mensual (ARS)</h4>
+                    <PlanPrice ars={selectedPlan.monthlyPriceArs} usd={selectedPlan.monthlyPriceUsd} />
                   </div>
                   <div>
-                    <h4 className="font-medium mb-1">Precio Anual</h4>
-                    <p className="text-sm text-muted-foreground">{formatPrice(selectedPlan.yearlyPriceUsd)}</p>
+                    <h4 className="font-medium mb-1">Precio anual (ARS)</h4>
+                    <PlanPrice ars={selectedPlan.yearlyPriceArs} usd={selectedPlan.yearlyPriceUsd} />
                   </div>
                 </div>
                 <div>
@@ -219,11 +241,7 @@ export function PlansTable({ plans = [], onEdit, onDelete }: PlansTableProps) {
                   </div>
                   <div>
                     <h4 className="font-medium mb-1">Estado</h4>
-                    {selectedPlan.active ? (
-                      <Badge variant="default" className="bg-green-600">Activo</Badge>
-                    ) : (
-                      <Badge variant="destructive">Inactivo</Badge>
-                    )}
+                    <PlanStatusBadge active={selectedPlan.active} />
                   </div>
                 </div>
               </div>

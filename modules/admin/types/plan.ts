@@ -10,9 +10,21 @@ export interface Plan {
   maxOptionGroups: number;
   maxPromotions: number;
   deliveryEnabled: boolean;
+  /** Precio de referencia en USD (lo que cobra Mercado Pago es el precio en ARS). */
   monthlyPriceUsd: number;
   yearlyPriceUsd: number;
-  active: boolean;
+  /** Pesos enteros que cobra Mercado Pago cada mes. null = sin precio: el plan no se puede comprar con Mercado Pago. */
+  monthlyPriceArs: number | null;
+  /** Pesos enteros que cobra Mercado Pago cada año. null = sin precio para el ciclo anual. */
+  yearlyPriceArs: number | null;
+  /**
+   * El backend actual siempre lo manda. Es opcional por tolerancia con respuestas sin el campo:
+   * un plan con `active` indefinido no se muestra como inactivo ni cambia de estado al guardarlo.
+   */
+  active?: boolean;
+  /** Fechas ISO; null si el backend no las tiene. */
+  createdAt: string | null;
+  updatedAt: string | null;
 }
 
 export interface CreatePlanDto {
@@ -28,9 +40,21 @@ export interface CreatePlanDto {
   deliveryEnabled: boolean;
   monthlyPriceUsd: number;
   yearlyPriceUsd: number;
-  active: boolean;
+  /** Pesos enteros (1 o más), o null para dejarlo sin precio. */
+  monthlyPriceArs?: number | null;
+  yearlyPriceArs?: number | null;
+  /** El backend lo crea activo si no se manda. */
+  active?: boolean;
 }
 
-export interface UpdatePlanDto extends CreatePlanDto {
+/**
+ * PUT /plans/:id es una actualización parcial y NO acepta `planType`: el tipo de un plan no se
+ * cambia, y el backend responde 400 ante cualquier propiedad que no conoce.
+ * En los precios ARS, `null` borra el precio y omitirlos los deja como están.
+ */
+export interface UpdatePlanDto extends Partial<Omit<CreatePlanDto, "planType">> {
   id: number;
 }
+
+/** Cuerpo de PUT /plans/:id: lo que arma el formulario en modo edición (el id va en la URL). */
+export type UpdatePlanPayload = Omit<UpdatePlanDto, "id">;

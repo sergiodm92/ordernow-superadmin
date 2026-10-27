@@ -8,6 +8,8 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./tests/setup.ts'],
+    // config/api.axios.ts falla al cargarse si falta esta variable (no tiene valor por defecto).
+    env: { NEXT_PUBLIC_API_URL: 'http://localhost:9091/api/v1' },
     include: ['**/*.{test,spec}.{ts,tsx}'],
     exclude: ['node_modules', '.next'],
     coverage: {

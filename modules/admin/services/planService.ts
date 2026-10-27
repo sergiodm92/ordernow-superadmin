@@ -12,7 +12,10 @@ export const createPlanService = async (data: CreatePlanDto): Promise<Plan> => {
 };
 
 export const updatePlanService = async (data: UpdatePlanDto): Promise<Plan> => {
-  const { id, ...body } = data;
+  // El tipo de un plan no se cambia: PUT /plans/:id responde 400 ante cualquier propiedad que no
+  // conoce, y planType es una. Se saca acá aunque un llamador (o un `any`) lo siga mandando.
+  const { id, ...body } = data as UpdatePlanDto & { planType?: unknown };
+  delete body.planType;
   const response = await api.put(`/plans/${id}`, body);
   return response.data.data;
 };

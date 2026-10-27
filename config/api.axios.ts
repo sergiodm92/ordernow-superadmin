@@ -107,8 +107,20 @@ class TokenManager {
 
 const tokenManager = new TokenManager();
 
+// La URL de la API es obligatoria y no tiene valor por defecto: un fallback fijo (antes, una IP de
+// la LAN del backend Spring viejo) hace que el panel hable con una API equivocada sin avisar.
+// Next reemplaza `process.env.NEXT_PUBLIC_API_URL` al compilar, por eso se lee con ese nombre exacto.
+const API_URL = process.env.NEXT_PUBLIC_API_URL?.trim();
+
+if (!API_URL) {
+  throw new Error(
+    'Falta la variable de entorno NEXT_PUBLIC_API_URL (URL base de la API, con el prefijo /api/v1, ' +
+      'por ejemplo http://localhost:9091/api/v1). Definirla en .env.local (ver .env.example) y reiniciar.'
+  );
+}
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://192.168.1.198:9090/api/v1',
+  baseURL: API_URL,
   timeout: 10000,
 });
 

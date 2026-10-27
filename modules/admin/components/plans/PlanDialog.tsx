@@ -11,20 +11,21 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/useToast";
+import { cn } from "@/lib/utils";
 import { Plan } from "../../types/plan";
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { type ChangeEvent, useState, useEffect, useMemo } from "react";
+import { type Control, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Plus } from "lucide-react";
+import { Info, Plus } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
   Select,
@@ -34,32 +35,75 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  PLAN_DESCRIPTION_MAX_LENGTH,
+  PLAN_TYPES,
+  type PlanFormValues,
+  buildCreatePlanPayload,
+  buildUpdatePlanPayload,
+  getArsPriceError,
+  getPlanFormDefaults,
+  getPlanFormSchema,
+  parseArsPriceInput,
+} from "../../validations/planValidation";
+import { formatArsPrice } from "../../utils/formatPrice";
 
-const PLAN_TYPES = ["FREE", "BASIC", "PRO", "ENTERPRISE"] as const;
+type ArsPriceFieldName = "monthlyPriceArs" | "yearlyPriceArs";
 
-const planSchema = z.object({
-  planType: z.string().min(1, "El tipo de plan es requerido"),
-  displayName: z.string().min(1, "El nombre es requerido"),
-  description: z.string().min(1, "La descripción es requerida"),
-  maxMenuItems: z.number(),
-  maxTables: z.number(),
-  maxEmployees: z.number(),
-  maxCategories: z.number(),
-  maxOptionGroups: z.number(),
-  maxPromotions: z.number(),
-  unlimitedMenuItems: z.boolean().default(false),
-  unlimitedTables: z.boolean().default(false),
-  unlimitedEmployees: z.boolean().default(false),
-  unlimitedCategories: z.boolean().default(false),
-  unlimitedOptionGroups: z.boolean().default(false),
-  unlimitedPromotions: z.boolean().default(false),
-  deliveryEnabled: z.boolean().default(false),
-  monthlyPriceUsd: z.number().min(0, "El precio debe ser mayor o igual a 0"),
-  yearlyPriceUsd: z.number().min(0, "El precio debe ser mayor o igual a 0"),
-  active: z.boolean().default(true),
-});
+/**
+ * Precio en pesos enteros; vacío = sin precio. Es un campo de texto y no de número a propósito: un
+ * `type="number"` lee "50.000" como 50 (el punto como decimal) y se guardaría un precio mil veces
+ * menor. Acá solo se aceptan dígitos y, debajo, se lee en voz alta cómo se va a guardar.
+ */
+function ArsPriceField({
+  control,
+  name,
+  label,
+}: {
+  control: Control<PlanFormValues>;
+  name: ArsPriceFieldName;
+  label: string;
+}) {
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => {
+        const price = parseArsPriceInput(field.value);
+        const savedAs = price !== null && !getArsPriceError(field.value) ? formatArsPrice(price) : null;
+        return (
+          <FormItem>
+            <FormLabel>{label}</FormLabel>
+            <FormControl>
+              <Input type="text" inputMode="numeric" autoComplete="off" placeholder="Sin precio" {...field} />
+            </FormControl>
+            <FormDescription>
+              Solo números, sin puntos ni comas (ej. 49900). Vacío = sin precio.
+              {savedAs && <span className="block font-medium text-foreground">Se guardará como {savedAs}</span>}
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
+    />
+  );
+}
 
-type PlanFormData = z.infer<typeof planSchema>;
+/**
+ * Props de un `<Input type="number">` ligado al formulario. Vacío = `null` (la validación lo rechaza
+ * con un mensaje), nunca `|| 0`: el navegador lee "9." como vacío y, si el estado pasara a 0, React
+ * reescribiría lo que se está escribiendo ("9." -> "0") y se perderían los dígitos siguientes.
+ */
+function numberInputProps<F extends { value: number | null; onChange: (...event: any[]) => void }>(
+  field: F
+) {
+  return {
+    ...field,
+    value: field.value ?? "",
+    onChange: (e: ChangeEvent<HTMLInputElement>) =>
+      field.onChange(e.target.value === "" ? null : Number(e.target.value)),
+  };
+}
 
 interface PlanDialogProps {
   plan?: Plan;
@@ -79,51 +123,18 @@ export function PlanDialog({ plan, onSubmit, trigger, title, onClose }: PlanDial
     }
   }, [plan, trigger]);
 
-  const form = useForm<PlanFormData>({
-    resolver: zodResolver(planSchema),
-    defaultValues: {
-      planType: plan?.planType || "",
-      displayName: plan?.displayName || "",
-      description: plan?.description || "",
-      maxMenuItems: plan ? (plan.maxMenuItems === -1 ? 0 : plan.maxMenuItems) : 0,
-      maxTables: plan ? (plan.maxTables === -1 ? 0 : plan.maxTables) : 0,
-      maxEmployees: plan ? (plan.maxEmployees === -1 ? 0 : plan.maxEmployees) : 0,
-      maxCategories: plan ? (plan.maxCategories === -1 ? 0 : plan.maxCategories) : 0,
-      maxOptionGroups: plan ? (plan.maxOptionGroups === -1 ? 0 : plan.maxOptionGroups ?? 0) : 0,
-      maxPromotions: plan ? (plan.maxPromotions === -1 ? 0 : plan.maxPromotions ?? 0) : 0,
-      unlimitedMenuItems: plan?.maxMenuItems === -1,
-      unlimitedTables: plan?.maxTables === -1,
-      unlimitedEmployees: plan?.maxEmployees === -1,
-      unlimitedCategories: plan?.maxCategories === -1,
-      unlimitedOptionGroups: plan?.maxOptionGroups === -1,
-      unlimitedPromotions: plan?.maxPromotions === -1,
-      deliveryEnabled: plan?.deliveryEnabled || false,
-      monthlyPriceUsd: plan?.monthlyPriceUsd || 0,
-      yearlyPriceUsd: plan?.yearlyPriceUsd || 0,
-      active: plan?.active ?? true,
-    },
+  // Editar: el tipo de plan es de solo lectura (el backend no lo acepta en PUT /plans/:id).
+  const isEditing = !!plan;
+  const schema = useMemo(() => getPlanFormSchema(isEditing ? "edit" : "create"), [isEditing]);
+
+  const form = useForm<PlanFormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: getPlanFormDefaults(plan),
   });
 
-  const handleSubmit = async (data: PlanFormData) => {
+  const handleSubmit = async (data: PlanFormValues) => {
     try {
-      const {
-        unlimitedMenuItems,
-        unlimitedTables,
-        unlimitedEmployees,
-        unlimitedCategories,
-        unlimitedOptionGroups,
-        unlimitedPromotions,
-        ...rest
-      } = data;
-      const payload = {
-        ...rest,
-        maxMenuItems: unlimitedMenuItems ? -1 : rest.maxMenuItems,
-        maxTables: unlimitedTables ? -1 : rest.maxTables,
-        maxEmployees: unlimitedEmployees ? -1 : rest.maxEmployees,
-        maxCategories: unlimitedCategories ? -1 : rest.maxCategories,
-        maxOptionGroups: unlimitedOptionGroups ? -1 : rest.maxOptionGroups,
-        maxPromotions: unlimitedPromotions ? -1 : rest.maxPromotions,
-      };
+      const payload = isEditing ? buildUpdatePlanPayload(data) : buildCreatePlanPayload(data);
       await onSubmit(payload);
       setOpen(false);
       form.reset();
@@ -170,7 +181,13 @@ export function PlanDialog({ plan, onSubmit, trigger, title, onClose }: PlanDial
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 overflow-y-auto max-h-[calc(90vh-8rem)] pr-2">
+          {/* noValidate: la validación es la de zod, con mensajes en español en cada campo; la nativa
+              (min/step de los inputs numéricos) mostraría un globito del navegador en su lugar. */}
+          <form
+            noValidate
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-4 overflow-y-auto max-h-[calc(90vh-8rem)] pr-2"
+          >
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -178,20 +195,29 @@ export function PlanDialog({ plan, onSubmit, trigger, title, onClose }: PlanDial
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Tipo de Plan</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar tipo" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {PLAN_TYPES.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {isEditing ? (
+                      <>
+                        <FormControl>
+                          <Input value={field.value} disabled />
+                        </FormControl>
+                        <FormDescription>El tipo de un plan no se puede cambiar.</FormDescription>
+                      </>
+                    ) : (
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccionar tipo" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {PLAN_TYPES.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -220,10 +246,35 @@ export function PlanDialog({ plan, onSubmit, trigger, title, onClose }: PlanDial
                   <FormControl>
                     <Textarea placeholder="Descripción del plan" {...field} rows={2} />
                   </FormControl>
+                  <FormDescription
+                    className={cn(
+                      "text-right text-xs",
+                      field.value.length > PLAN_DESCRIPTION_MAX_LENGTH && "text-destructive"
+                    )}
+                  >
+                    {field.value.length}/{PLAN_DESCRIPTION_MAX_LENGTH}
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            <div className="grid grid-cols-2 gap-4">
+              <ArsPriceField control={form.control} name="monthlyPriceArs" label="Precio mensual (ARS)" />
+              <ArsPriceField control={form.control} name="yearlyPriceArs" label="Precio anual (ARS)" />
+            </div>
+
+            <div
+              role="note"
+              className="flex items-start gap-2 rounded-lg border bg-muted/40 p-3 text-sm text-muted-foreground"
+            >
+              <Info aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
+              <p>
+                Los precios nuevos rigen para las suscripciones nuevas: las suscripciones activas
+                conservan el monto con el que se crearon. Un plan sin precio en ARS para un ciclo no
+                se puede comprar con Mercado Pago.
+              </p>
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
               <FormField
@@ -231,14 +282,13 @@ export function PlanDialog({ plan, onSubmit, trigger, title, onClose }: PlanDial
                 name="monthlyPriceUsd"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Precio Mensual (USD)</FormLabel>
+                    <FormLabel>Precio mensual (USD, referencia)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
                         step="0.01"
                         placeholder="0.00"
-                        {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                        {...numberInputProps(field)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -250,14 +300,13 @@ export function PlanDialog({ plan, onSubmit, trigger, title, onClose }: PlanDial
                 name="yearlyPriceUsd"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Precio Anual (USD)</FormLabel>
+                    <FormLabel>Precio anual (USD, referencia)</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
                         step="0.01"
                         placeholder="0.00"
-                        {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                        {...numberInputProps(field)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -291,10 +340,10 @@ export function PlanDialog({ plan, onSubmit, trigger, title, onClose }: PlanDial
                             <Input
                               type="number"
                               min={0}
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                              {...numberInputProps(field)}
                             />
                           </FormControl>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -323,10 +372,10 @@ export function PlanDialog({ plan, onSubmit, trigger, title, onClose }: PlanDial
                             <Input
                               type="number"
                               min={0}
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                              {...numberInputProps(field)}
                             />
                           </FormControl>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -355,10 +404,10 @@ export function PlanDialog({ plan, onSubmit, trigger, title, onClose }: PlanDial
                             <Input
                               type="number"
                               min={0}
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                              {...numberInputProps(field)}
                             />
                           </FormControl>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -387,10 +436,10 @@ export function PlanDialog({ plan, onSubmit, trigger, title, onClose }: PlanDial
                             <Input
                               type="number"
                               min={0}
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                              {...numberInputProps(field)}
                             />
                           </FormControl>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -419,10 +468,10 @@ export function PlanDialog({ plan, onSubmit, trigger, title, onClose }: PlanDial
                             <Input
                               type="number"
                               min={0}
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                              {...numberInputProps(field)}
                             />
                           </FormControl>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -451,10 +500,10 @@ export function PlanDialog({ plan, onSubmit, trigger, title, onClose }: PlanDial
                             <Input
                               type="number"
                               min={0}
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                              {...numberInputProps(field)}
                             />
                           </FormControl>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -492,12 +541,14 @@ export function PlanDialog({ plan, onSubmit, trigger, title, onClose }: PlanDial
                   <div className="space-y-0.5">
                     <FormLabel>Activo</FormLabel>
                     <div className="text-sm text-muted-foreground">
-                      El plan estará disponible para asignar
+                      {field.value === undefined
+                        ? "No se pudo leer el estado actual del plan: se conserva mientras no se cambie este interruptor."
+                        : "Un plan inactivo sale del catálogo público y no se puede comprar con Mercado Pago. Las suscripciones que ya lo tienen lo conservan."}
                     </div>
                   </div>
                   <FormControl>
                     <Switch
-                      checked={field.value}
+                      checked={field.value === true}
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
@@ -505,8 +556,8 @@ export function PlanDialog({ plan, onSubmit, trigger, title, onClose }: PlanDial
               )}
             />
 
-            <Button type="submit" className="w-full">
-              {plan ? "Actualizar" : "Crear"} Plan
+            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting ? "Guardando..." : `${plan ? "Actualizar" : "Crear"} Plan`}
             </Button>
           </form>
         </Form>
