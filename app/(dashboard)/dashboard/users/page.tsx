@@ -131,15 +131,13 @@ export default function UsersPage() {
                     </TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs ${
-                        user.emailVerified ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        user.isEmailVerified ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                       }`}>
-                        {user.emailVerified ? 'Verify' : 'Not Verify'}
+                        {user.isEmailVerified ? 'Verify' : 'Not Verify'}
                       </span>
                     </TableCell>
                     <TableCell>
-                      {user.establishments && user.establishments.length > 0
-                        ? user.establishments.map((est) => est.name).join(", ")
-                        : "—"}
+                      {user.establishment ? user.establishment.name : "—"}
                     </TableCell>
                     <TableCell className="text-right space-x-2">
                       <EditUserDialog

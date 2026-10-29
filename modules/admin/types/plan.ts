@@ -1,3 +1,7 @@
+// A mano y no derivados de `Schemas["PlanDto"]` como el resto de los tipos de admin: `types/api.generated.ts`
+// sale de un contrato donde el plan no trae los precios en ARS, `active`, `createdAt` ni `updatedAt`, y
+// regenerarlo contra el contrato actual del backend renombra schemas que usan otros modulos (User, Role,
+// Permission). Cuando se refresque ese archivo (`npm run gen:api`), estos tipos se pueden volver a derivar.
 export interface Plan {
   id: number;
   planType: string;

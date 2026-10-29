@@ -1,14 +1,7 @@
-export interface PermissionDTO {
-  id: string;
-  name: string;
-  description: string;
-}
+import { Schemas } from "@/types/api";
 
-export interface CreatePermissionDTO {
-  name: string;
-  description: string;
-}
-
-export interface UpdatePermissionDTO extends CreatePermissionDTO {
-  id: string;
-}
+// The backend's PermissionsController returns the full Permission entity (not a lean DTO) —
+// verified against permissions.controller.ts. Only id/name/description are actually read here.
+export type PermissionDTO = Schemas["Permission"];
+export type CreatePermissionDTO = Schemas["CreatePermissionDto"];
+export type UpdatePermissionDTO = Schemas["UpdatePermissionDto"] & { id: string };

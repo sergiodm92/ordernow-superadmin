@@ -1,13 +1,16 @@
 import api from "@/config/api.axios";
+import { ApiData } from "@/types/api";
 import { CreateNotificationPayload, NotificationPage } from "../types/notification";
 
 export const getNotifications = async (page: number, size: number): Promise<NotificationPage> => {
-  const response = await api.get(`/notifications?page=${page}&size=${size}`);
+  const response = await api.get<{ data: NotificationPage }>(`/notifications?page=${page}&size=${size}`);
   return response.data.data;
 };
 
 export const getUnreadCount = async (): Promise<number> => {
-  const response = await api.get("/notifications/unread-count");
+  const response = await api.get<{ data: ApiData<"/api/v1/notifications/unread-count", "get"> }>(
+    "/notifications/unread-count"
+  );
   return response.data.data;
 };
 

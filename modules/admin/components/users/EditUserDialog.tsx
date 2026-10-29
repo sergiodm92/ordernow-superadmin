@@ -11,7 +11,7 @@ import * as yup from "yup";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { UpdateUserData, updateUserService } from "../../services/userService";
-import { IUser } from "@/modules/auth/types/user";
+import { AdminUser } from "../../store/user";
 import { Pencil } from "lucide-react"
 import { useState } from "react";
 
@@ -24,7 +24,7 @@ const schema = yup.object().shape({
 });
 
 interface EditUserDialogProps {
-  user: IUser;
+  user: AdminUser;
   roles: any[];
   onSuccess: () => void;
 }

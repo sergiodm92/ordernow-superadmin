@@ -1,5 +1,9 @@
 import { Role } from "@/modules/admin/types/role";
+import { Schemas } from "@/types/api";
 
+// Composite FE shape for the logged-in user, built by loginAdminService's mapping of
+// AuthResponsePayload (accessToken/refreshToken/user/establishments) — not a 1:1 backend DTO,
+// so this stays hand-written (see authService.ts).
 export interface IUser {
   id: string;
   email: string;
@@ -14,25 +18,5 @@ export interface IUser {
   establishments?: IEstablishment[];
 }
 
-export interface IEstablishment {
-  id: number;
-  name: string;
-  country: string;
-  state: string;
-  city: string;
-  address: string;
-  phone: string;
-  email: string;
-  userOwnerId: string;
-  checkoutMode?: string;
-  description?: string;
-  website?: string;
-  cuisineType?: string;
-  capacity?: number;
-  openingHours?: string;
-  deliveryRadius?: number;
-  acceptsReservations?: boolean;
-  hasWifi?: boolean;
-  hasParking?: boolean;
-  acceptsCards?: boolean;
-}
+// Mirrors the backend's EstablishmentResponseDto (used for AuthResponse.establishments).
+export type IEstablishment = Schemas["EstablishmentResponseDto"];
