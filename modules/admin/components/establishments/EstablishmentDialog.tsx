@@ -59,19 +59,30 @@ export function EstablishmentDialog({
   const { fetchUsers } = useFetchUsers(0, 100); // Fetch first 100 users
   const { toast } = useToast();
 
+  const toFormValues = (source?: IEstablishment): EstablishmentFormValues => ({
+    name: source?.name ?? "",
+    country: source?.country ?? "",
+    state: source?.state ?? "",
+    city: source?.city ?? "",
+    address: source?.address ?? "",
+    phone: source?.phone ?? "",
+    email: source?.email ?? "",
+    userOwnerId: source?.userOwnerId ?? "",
+  });
+
   const form = useForm<EstablishmentFormValues>({
     resolver: zodResolver(establishmentSchema),
-    defaultValues: {
-      name: establishment?.name || "",
-      country: establishment?.country || "",
-      state: establishment?.state || "",
-      city: establishment?.city || "",
-      address: establishment?.address || "",
-      phone: establishment?.phone || "",
-      email: establishment?.email || "",
-      userOwnerId: establishment?.userOwnerId || "",
-    },
+    defaultValues: toFormValues(establishment),
   });
+
+  // useForm only reads defaultValues on the first render, and the page keeps this dialog mounted
+  // with no establishment. Without a reset, opening "Editar" shows the empty create form.
+  useEffect(() => {
+    if (open) {
+      form.reset(toFormValues(mode === "edit" ? establishment : undefined));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, mode, establishment, form.reset]);
 
   // Fetch users when dialog opens
   useEffect(() => {
@@ -213,6 +224,7 @@ export function EstablishmentDialog({
                       options={userOptions}
                       value={field.value}
                       onValueChange={field.onChange}
+                      disabled={mode === "edit"}
                       placeholder="Seleccionar propietario..."
                       searchPlaceholder="Buscar usuario..."
                       emptyText="No se encontraron usuarios."

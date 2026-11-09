@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,13 @@ import { useFetchUsers } from "@/modules/admin/hooks/useFetchUsers";
 import { useUsersStore } from "@/modules/admin/store/user";
 import { useFetchRoles } from "@/modules/admin/hooks/useFetchRoles";
 import { useRolesStore } from "@/modules/admin/store/roles";
+import { useEstablishments } from "@/modules/admin/hooks/useEstablishments";
+import { usePlans } from "@/modules/admin/hooks/usePlans";
+import { useUserSubscriptions } from "@/modules/admin/hooks/useUserSubscriptions";
+import { providerLabel, statusLabel } from "@/modules/admin/utils/subscriptionLabels";
+import { IEstablishment } from "@/modules/admin/types/establishment";
 import CreateUserDialog from "@/modules/admin/components/users/CreateUserDialog";
+import { ChangePlanDialog } from "@/modules/admin/components/users/ChangePlanDialog";
 import { EditUserDialog } from "@/modules/admin/components/users/EditUserDialog";
 import { DeleteUserDialog } from "@/modules/admin/components/users/DeleteUserDialog";
 import { Badge } from "@/components/ui/badge";
@@ -20,11 +26,66 @@ export default function UsersPage() {
   const [size, setSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>('');
+  const [ownerFilter, setOwnerFilter] = useState<'all' | 'owners'>('all');
 
   const { fetchUsers } = useFetchUsers(page, size);
   const { users, totalElements } = useUsersStore();
   useFetchRoles();
   const { roles } = useRolesStore();
+  const { establishments, fetchEstablishments } = useEstablishments();
+
+  useEffect(() => {
+    fetchEstablishments();
+  }, [fetchEstablishments]);
+
+  // GET /users/all doesn't say who owns what: an owner is whoever an establishment names as its
+  // userOwnerId. The super admin gets every establishment, so this set is complete.
+  const ownedEstablishments = useMemo(() => {
+    const byOwner = new Map<string, IEstablishment[]>();
+    for (const establishment of establishments) {
+      const owned = byOwner.get(establishment.userOwnerId) ?? [];
+      owned.push(establishment);
+      byOwner.set(establishment.userOwnerId, owned);
+    }
+    return byOwner;
+  }, [establishments]);
+
+  // The plan belongs to the owner and limits everyone who works in their establishments, so it is
+  // shown (and changed) on the owners only.
+  const { plans } = usePlans();
+  const assignablePlans = useMemo(() => plans.filter((plan) => plan.active !== false), [plans]);
+  const ownerIds = useMemo(
+    () => users.filter((user) => ownedEstablishments.has(user.id)).map((user) => user.id),
+    [users, ownedEstablishments],
+  );
+  const { subscriptions, isLoading: loadingSubscriptions, isError: subscriptionsFailed } = useUserSubscriptions(ownerIds);
+
+  // An owner that is not in the answer has no stored subscription: the implicit FREE plan.
+  const freePlanName = plans.find((plan) => plan.planType === "FREE")?.displayName ?? "FREE";
+
+  const renderPlan = (userId: string) => {
+    if (!ownedEstablishments.has(userId)) return "—";
+    if (subscriptionsFailed) return <span className="text-xs text-red-600">No se pudo cargar</span>;
+    if (loadingSubscriptions) return <span className="text-muted-foreground">…</span>;
+
+    const subscription = subscriptions.get(userId);
+    if (!subscription) return <Badge variant="outline">{freePlanName}</Badge>;
+
+    const detail =
+      subscription.status !== "ACTIVE"
+        ? statusLabel(subscription.status)
+        : subscription.paymentProvider
+          ? providerLabel(subscription.paymentProvider)
+          : subscription.plan.planType !== "FREE"
+            ? "Sin cobro"
+            : null;
+    return (
+      <div className="flex flex-col gap-1">
+        <Badge variant="outline" className="w-fit">{subscription.plan.displayName}</Badge>
+        {detail && <span className="text-xs text-muted-foreground">{detail}</span>}
+      </div>
+    );
+  };
 
   const totalPages = Math.ceil(totalElements / size);
 
@@ -78,6 +139,17 @@ export default function UsersPage() {
                   ))}
                 </select>
               </div>
+              <div className="w-[220px]">
+                <select
+                  className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                  value={ownerFilter}
+                  onChange={(e) => setOwnerFilter(e.target.value as 'all' | 'owners')}
+                  aria-label="Filtrar por dueños de establecimientos"
+                >
+                  <option value="all">Todos los usuarios</option>
+                  <option value="owners">Solo dueños de establecimientos</option>
+                </select>
+              </div>
             </div>
             <Table>
               <TableHeader>
@@ -87,6 +159,7 @@ export default function UsersPage() {
                   <TableHead>Email</TableHead>
                   <TableHead>Roles</TableHead>
                   <TableHead>Establecimiento</TableHead>
+                  <TableHead>Plan</TableHead>
                   <TableHead>Email Verify</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -102,7 +175,9 @@ export default function UsersPage() {
                     const roleMatch = selectedRoleFilter === '' ||
                       user.roles.some(role => role.name === selectedRoleFilter);
 
-                    return searchMatch && roleMatch;
+                    const ownerMatch = ownerFilter === 'all' || ownedEstablishments.has(user.id);
+
+                    return searchMatch && roleMatch && ownerMatch;
                   })
                   .map((user) => (
                   <TableRow key={user.id}>
@@ -130,16 +205,26 @@ export default function UsersPage() {
                       </div>
                     </TableCell>
                     <TableCell>
+                      {ownedEstablishments.get(user.id)?.map((est) => est.name).join(", ") ??
+                        user.establishment?.name ??
+                        "—"}
+                    </TableCell>
+                    <TableCell>{renderPlan(user.id)}</TableCell>
+                    <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs ${
                         user.isEmailVerified ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                       }`}>
                         {user.isEmailVerified ? 'Verify' : 'Not Verify'}
                       </span>
                     </TableCell>
-                    <TableCell>
-                      {user.establishment ? user.establishment.name : "—"}
-                    </TableCell>
                     <TableCell className="text-right space-x-2">
+                      {ownedEstablishments.has(user.id) && !loadingSubscriptions && !subscriptionsFailed && (
+                        <ChangePlanDialog
+                          user={user}
+                          plans={assignablePlans}
+                          subscription={subscriptions.get(user.id)}
+                        />
+                      )}
                       <EditUserDialog
                         user={user}
                         roles={roles}
